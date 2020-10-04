@@ -1,0 +1,137 @@
+## All imports, datareader for the TIINGO API, seaborn for viz and so on
+
+from pandas_datareader import data, wb
+import pandas as pd
+import numpy as np
+import datetime
+import seaborn as sns
+sns.set_style('whitegrid')
+import matplotlib.pyplot as plt
+%matplotlib inline
+sns.set()
+
+## We create a datetime object to refer to when getting dat from TIINGO
+
+start = datetime.datetime(2006, 1, 1)
+end = datetime.datetime(2016, 1, 1)
+
+## We get these bad boys under this into dataframes so we can concatenate l8r
+
+BAC = data.DataReader("BAC", 'yahoo', start, end)
+C = data.DataReader("C", 'yahoo', start, end)
+GS = data.DataReader("GS", 'yahoo', start, end)
+JPM = data.DataReader("JPM", 'yahoo', start, end)
+MS = data.DataReader("MS", 'yahoo', start, end)
+WFC = data.DataReader("WFC", 'yahoo', start, end)
+
+## we join on key below
+
+tickers = ['BAC','C','GS','JPM','MS','WFC']
+
+## Concatenate our dataframes
+
+stonks = pd.concat([BAC,C,GS,JPM,MS,WFC],axis=1,keys=tickers)
+
+# we set column names for the stonks dataframe
+
+stonks.columns.names = ['Bank Ticker','Stock Info']
+
+## EDA and just overall viz
+
+## Series giving lit of close prices for all the bank's stocks
+stonks.xs(key=('Close'), axis=1, level='Stock Info', drop_level=True).max()
+
+## We make an empty dataframe called returns, containing each bank's returns.
+
+returns=pd.DataFrame()
+
+## Ideally we just use the pandas pct_change() method as returns are practically the same thing
+## make a for loop calculating returns for each bank stonks and set that as the column in the empty df
+
+for tick in tickers:
+    returns[tick + '  return']=stonks[tick]['Close'].pct_change()
+returns.head()
+
+## We make a pairplot using seaborn just bc its prettier than plt
+
+sns.pairplot(returns[1:])
+plt.show()
+
+## citigroup plots looking very sus
+
+## we get dates for the best and worst single day returns
+
+returns.idxmin()
+returns.idxmax()
+
+## We look at the standard deviation of the returns for each bank
+
+returns.std()
+
+## + deviation = + volatility = + risk
+## Citigroup shows the highest standard deviation telling us all we need to know
+
+## now what are the riskiest bank stonks for 2015???
+
+returns.loc['2015-01-01':'2015-12-31'].std()
+
+## we see morgan stanley has largest std dev that year, making it the riskiest boi in 2015
+
+## make a distribution plot of 2015 returns for MS
+
+plt.figure(figsize=(12,4))
+sns.distplot(returns.loc['2015-01-01':'2015-12-31']['MS  return'],color='red',bins=100)
+
+## same thing for 2008 returns for citigroup, see 2008 market crash
+
+plt.figure(figsize=(12,4))
+sns.distplot(returns.loc['2008-01-01':'2008-12-31']['C  return'],color='green',bins=100)
+
+## Using plotly and cufflinks for technical analysis
+## Optional Plotly Method Imports
+
+from plotly import __version__
+print(__version__)
+
+plt.style.use('ggplot')
+import cufflinks as cf
+from plotly.offline import download_plotlyjs,init_notebook_mode,plot,iplot
+init_notebook_mode(connected=True)
+cf.go_offline()
+
+#  We make a line plot for each bank's close price for the entire timeframe
+# we use .xs method to get a cross-section of the dataframe
+
+stonks.xs(key=('Close'), axis=1, level='Stock Info', drop_level=True).iplot()
+
+## We also play with moving averages because why not
+
+## 30 day rolling avg against bank of america's stonk close price in 2008
+
+plt.figure(figsize=(12,6))
+BAC['Close'].loc['2008-01-01':'2008-12-31'].rolling(window=30).mean().plot(label='30 rolling average')
+BAC['Close'].loc['2008-01-01':'2008-12-31'].plot(label='BAC close price')
+plt.legend()
+
+## we make a heatmap of the correlation between stonks' close price
+
+sns.heatmap(stonks.xs(key=('Close'), axis=1, level='Stock Info', drop_level=True).corr(),annot=True)
+
+## Technical analysis plots using cufflinks
+
+## we make a candle plot of bank america's stonk from 1st jan 2015 - 1st jan 2016
+
+stonks.loc['2015-01-1':'2016-01-1']['BAC'].iplot(kind='candle')
+
+# easy enough
+
+## We use cf.QuantFig, we add simple moving averages and bollinger bands bc yes
+
+msf=cf.QuantFig(stonks['MS'],title='Morgan Stanley 2015 Perfomance',legend='top',name='MS')
+msf.add_bollinger_bands()
+msf.add_sma([10,20],width=2,color=['green','lightgreen'],legendgroup=True)
+msf.iplot()
+
+
+
+
