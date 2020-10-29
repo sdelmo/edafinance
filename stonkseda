@@ -1,4 +1,4 @@
-## All imports, datareader for the TIINGO API, seaborn for viz and so on
+
 
 from pandas_datareader import data, wb
 import pandas as pd
@@ -15,7 +15,7 @@ sns.set()
 start = datetime.datetime(2006, 1, 1)
 end = datetime.datetime(2016, 1, 1)
 
-## We get these bad boys under this into dataframes so we can concatenate l8r
+## We get these bad boys under this into dataframes so we can concatenate later
 
 BAC = data.DataReader("BAC", 'yahoo', start, end)
 C = data.DataReader("C", 'yahoo', start, end)
@@ -36,7 +36,7 @@ stonks = pd.concat([BAC,C,GS,JPM,MS,WFC],axis=1,keys=tickers)
 
 stonks.columns.names = ['Bank Ticker','Stock Info']
 
-## EDA and just overall viz
+## EDA and just overall data visualization
 
 ## Series giving lit of close prices for all the bank's stocks
 stonks.xs(key=('Close'), axis=1, level='Stock Info', drop_level=True).max()
@@ -57,7 +57,7 @@ returns.head()
 sns.pairplot(returns[1:])
 plt.show()
 
-## citigroup plots looking very sus
+## citigroup plots looking very interesting
 
 ## we get dates for the best and worst single day returns
 
@@ -75,7 +75,7 @@ returns.std()
 
 returns.loc['2015-01-01':'2015-12-31'].std()
 
-## we see morgan stanley has largest std dev that year, making it the riskiest boi in 2015
+## we see morgan stanley has largest std dev that year, making it the riskiest asset in 2015
 
 ## make a distribution plot of 2015 returns for MS
 
